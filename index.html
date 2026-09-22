@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Miernik Wilgotności</title>
+  <!-- Biblioteka do wykresów Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    * { box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+    body { background-color: #f4f6f8; margin: 0; padding: 20px; color: #333; }
+    .container { max-width: 500px; margin: 0 auto; }
+    
+    .card {
+      background: #ffffff;
+      border-radius: 16px;
+      padding: 20px;
+      margin-bottom: 20px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    }
+    
+    .header { text-align: center; }
+    .header h2 { margin: 0 0 5px 0; font-size: 1.2rem; color: #666; }
+    .current-val { font-size: 3.5rem; font-weight: bold; color: #2e7d32; margin: 10px 0; }
+    .updated-at { font-size: 0.85rem; color: #888; }
+
+    .chart-container { position: relative; width: 100%; height: 250px; }
+    
+    button {
+      width: 100%;
+      padding: 12px;
+      border: none;
+      border-radius: 10px;
+      background: #2e7d32;
+      color: white;
+      font-size: 1rem;
+      font-weight: bold;
+      cursor: pointer;
+    }
+    button:active { background: #1b5e20; }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <!-- Karta aktualnego stanu -->
+  <div class="card header">
+    <h2>Roślina: ROSLINA_001</h2>
+    <div class="current-val" id="moisture-val">--%</div>
+    <div class="updated-at" id="update-time">Pobieranie danych...</div>
+  </div>
+
+  <!-- Karta wykresu -->
+  <div class="card">
+    <div class="chart-container">
+      <canvas id="moistureChart"></canvas>
+    </div>
+  </div>
+
+  <button onclick="loadData()">Odśwież dane</button>
+</div>
+
+<script>
+  // Adres do bazy Firebase z historią urządzeń
+  const DB_URL = "https://mierniki-gleby-default-rtdb.europe-west1.firebasedatabase.app/devices/ROSLINA_001/history.json";
+  let myChart = null;
+
+  async function loadData() {
+    document.getElementById('update-time').innerText = "Ładowanie...";
+    
+    try {
+      const response = await fetch(DB_URL);
+      const data = await response.json();
+
+      if (!data) {
+        document.getElementById('update-time').innerText = "Brak danych w bazie";
+        return;
+      }
+
+      // Konwersja obiektu z Firebase na tablicę
+      const entries = Object.values(data);
+
+      // Sortowanie po timestampie (od najstarszego do najnowszego)
+      entries.sort((a, b) => a.timestamp - b.timestamp);
+
+      // Pobranie ostatnich 30 pomiarów do wykresu
+      const recent = entries.slice(-30);
+
+      // Przygotowanie etykiet (godzin) i wartości
+      const labels = recent.map(item => {
+        const date = new Date(item.timestamp);
+        return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      });
+      const values = recent.map(item => item.moisture);
+
+      // Aktualizacja wartości na górze karty
+      const latest = recent[recent.length - 1];
+      document.getElementById('moisture-val').innerText = `${latest.moisture}%`;
+      
+      const lastDate = new Date(latest.timestamp);
+      document.getElementById('update-time').innerText = `Ostatnia aktualizacja: ${lastDate.toLocaleDateString()} ${lastDate.toLocaleTimeString()}`;
+
+      // Rysowanie/Aktualizacja wykresu
+      renderChart(labels, values);
+
+    } catch (err) {
+      console.error(err);
+      document.getElementById('update-time').innerText = "Błąd połączenia z bazą";
+    }
+  }
+
+  function renderChart(labels, values) {
+    const ctx = document.getElementById('moistureChart').getContext('2d');
+
+    if (myChart) {
+      myChart.destroy(); // Usunięcie starego wykresu przed narysowaniem nowego
+    }
+
+    myChart = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: labels,
+        datasets: [{
+          label: 'Wilgotność (%)',
+          data: values,
+          borderColor: '#2e7d32',
+          backgroundColor: 'rgba(46, 125, 50, 0.1)',
+          fill: true,
+          tension: 0.3,
+          pointRadius: 4
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+          y: {
+            min: 0,
+            max: 100,
+            ticks: { callback: value => value + '%' }
+          }
+        }
+      }
+    });
+  }
+
+  // Automatyczne załadowanie przy starcie
+  loadData();
+</script>
+
+</body>
+</html>
