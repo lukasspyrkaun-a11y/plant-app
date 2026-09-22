@@ -3,11 +3,15 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Moje Rośliny</title>
+  <title>Inteligentne Rośliny</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  
+  <!-- Chart.js i adapter czasu do proporcjonalnego wykresu -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/date-fns"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
   
   <style>
     :root {
@@ -19,63 +23,67 @@
       --text-muted: #6b7280;
       --border-color: #e5e7eb;
       --shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05);
+      --input-bg: #f9fafb;
+    }
+
+    body.dark {
+      --bg-color: #111827;
+      --card-bg: #1f2937;
+      --primary: #34d399;
+      --primary-dark: #10b981;
+      --text-main: #f9fafb;
+      --text-muted: #9ca3af;
+      --border-color: #374151;
+      --shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5);
+      --input-bg: #374151;
     }
 
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', sans-serif; }
-    body { background-color: var(--bg-color); color: var(--text-main); padding: 16px; display: flex; justify-content: center; min-height: 100vh; }
-    .app-container { width: 100%; max-width: 480px; display: flex; flex-direction: column; gap: 16px; }
+    body { background-color: var(--bg-color); color: var(--text-main); padding: 16px; display: flex; justify-content: center; transition: all 0.3s ease; }
+    .app-container { width: 100%; max-width: 480px; display: flex; flex-direction: column; gap: 16px; padding-bottom: 30px; }
 
-    .header-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
-    .header-title { font-size: 1.4rem; font-weight: 700; color: var(--text-main); }
-    .add-btn { background: var(--primary); color: white; border: none; padding: 8px 14px; border-radius: 12px; font-weight: 600; font-size: 0.85rem; cursor: pointer; }
+    .header-bar { display: flex; justify-content: space-between; align-items: center; }
+    .header-title { font-size: 1.4rem; font-weight: 700; }
+    .header-actions { display: flex; gap: 8px; }
+    .btn-small { background: var(--primary); color: #fff; border: none; padding: 8px 14px; border-radius: 12px; font-weight: 600; font-size: 0.85rem; cursor: pointer; }
+    .btn-icon { background: var(--card-bg); color: var(--text-main); border: 1px solid var(--border-color); padding: 8px; border-radius: 12px; cursor: pointer; }
 
-    /* Lista Kafelków Roślin */
     .plants-scroll { display: flex; gap: 10px; overflow-x: auto; padding-bottom: 8px; scrollbar-width: none; }
     .plants-scroll::-webkit-scrollbar { display: none; }
-
-    .plant-card-small {
-      background: var(--card-bg);
-      border: 2px solid transparent;
-      border-radius: 16px;
-      padding: 12px;
-      min-width: 130px;
-      box-shadow: var(--shadow);
-      cursor: pointer;
-      transition: all 0.2s;
-      flex-shrink: 0;
-    }
-    .plant-card-small.active { border-color: var(--primary); background: #ecfdf5; }
-    .card-small-title { font-size: 0.85rem; font-weight: 600; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .plant-card-small { background: var(--card-bg); border: 2px solid transparent; border-radius: 16px; padding: 12px; min-width: 130px; box-shadow: var(--shadow); cursor: pointer; flex-shrink: 0; }
+    .plant-card-small.active { border-color: var(--primary); }
+    .card-small-title { font-size: 0.85rem; font-weight: 600; color: var(--text-muted); }
     .card-small-val { font-size: 1.6rem; font-weight: 800; margin: 4px 0; color: var(--text-main); }
-    .card-small-status { font-size: 0.7rem; font-weight: 600; }
-
-    /* Karta Główna */
+    
     .card { background: var(--card-bg); border-radius: 20px; padding: 20px; box-shadow: var(--shadow); }
     .plant-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
-    .plant-name { font-size: 1.3rem; font-weight: 700; color: var(--text-main); border: none; background: transparent; outline: none; width: 100%; border-bottom: 2px solid transparent; }
-    .plant-name:focus { border-color: var(--primary); }
-    .device-badge { font-size: 0.75rem; background: #ecfdf5; color: var(--primary-dark); padding: 4px 8px; border-radius: 8px; font-weight: 600; white-space: nowrap; }
+    .plant-name { font-size: 1.3rem; font-weight: 700; color: var(--text-main); border: none; background: transparent; outline: none; width: 100%; }
+    .plant-name:focus { border-bottom: 2px solid var(--primary); }
+    .device-badge { font-size: 0.75rem; background: var(--input-bg); color: var(--text-muted); padding: 4px 8px; border-radius: 8px; font-weight: 600; }
 
     .moisture-display { text-align: center; padding: 12px 0; }
-    .moisture-value { font-size: 3.8rem; font-weight: 800; letter-spacing: -1px; line-height: 1; margin-bottom: 8px; }
+    .moisture-value { font-size: 3.8rem; font-weight: 800; letter-spacing: -1px; margin-bottom: 8px; }
     .status-pill { display: inline-flex; align-items: center; padding: 6px 16px; border-radius: 20px; font-size: 0.85rem; font-weight: 600; margin-bottom: 8px; }
-    .status-good { background: #d1fae5; color: #065f46; }
-    .status-dry { background: #fee2e2; color: #991b1b; }
-    .status-wet { background: #e0f2fe; color: #075985; }
+    .status-good { background: rgba(16, 185, 129, 0.2); color: var(--primary); }
+    .status-alert { background: rgba(239, 68, 68, 0.2); color: #ef4444; }
     .last-update { font-size: 0.78rem; color: var(--text-muted); }
 
-    .stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--border-color); text-align: center; }
-    .stat-label { font-size: 0.72rem; color: var(--text-muted); margin-bottom: 2px; }
-    .stat-val { font-size: 0.95rem; font-weight: 600; }
-
-    .chart-controls { display: flex; gap: 6px; background: #f3f4f6; padding: 4px; border-radius: 12px; margin-bottom: 12px; }
+    .chart-controls { display: flex; gap: 6px; background: var(--input-bg); padding: 4px; border-radius: 12px; margin-bottom: 12px; }
     .range-btn { flex: 1; border: none; background: transparent; padding: 8px 0; font-size: 0.78rem; font-weight: 600; color: var(--text-muted); border-radius: 8px; cursor: pointer; }
-    .range-btn.active { background: #ffffff; color: var(--text-main); box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05); }
+    .range-btn.active { background: var(--card-bg); color: var(--text-main); box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
     .chart-container { position: relative; height: 220px; width: 100%; }
+
+    /* Konfiguracja panelu */
+    .config-panel { display: none; margin-top: 16px; border-top: 1px solid var(--border-color); padding-top: 16px; }
+    .config-panel.open { display: block; }
+    .config-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+    .config-label { font-size: 0.85rem; font-weight: 600; color: var(--text-muted); }
+    .config-input { width: 80px; padding: 6px; border-radius: 8px; border: 1px solid var(--border-color); background: var(--input-bg); color: var(--text-main); font-weight: 600; text-align: right; }
+    .config-save-btn { width: 100%; padding: 12px; background: var(--primary); color: #fff; border: none; border-radius: 12px; font-weight: 600; margin-top: 8px; cursor: pointer; }
 
     .actions-bar { display: flex; gap: 8px; }
     .refresh-btn { flex: 1; padding: 14px; border: none; border-radius: 14px; background: var(--primary); color: white; font-size: 0.95rem; font-weight: 600; cursor: pointer; }
-    .delete-btn { padding: 14px; border: none; border-radius: 14px; background: #fee2e2; color: #991b1b; font-size: 0.85rem; font-weight: 600; cursor: pointer; }
+    .config-btn { padding: 14px; border: none; border-radius: 14px; background: var(--input-bg); color: var(--text-main); font-size: 0.95rem; font-weight: 600; cursor: pointer; }
   </style>
 </head>
 <body>
@@ -83,13 +91,14 @@
 <div class="app-container">
   <div class="header-bar">
     <div class="header-title">Moje Rośliny</div>
-    <button class="add-btn" onclick="promptAddDevice()">+ Dodaj</button>
+    <div class="header-actions">
+      <button class="btn-icon" onclick="toggleTheme()">🌓</button>
+      <button class="btn-small" onclick="promptAddDevice()">+ Dodaj</button>
+    </div>
   </div>
 
-  <!-- Pasek Kafelków z Roślinami -->
   <div class="plants-scroll" id="plants-list"></div>
 
-  <!-- Karta Aktywnej Rośliny -->
   <div class="card">
     <div class="plant-header">
       <input type="text" id="plant-name-input" class="plant-name" value="Ładowanie..." />
@@ -101,21 +110,14 @@
       <div class="status-pill status-good" id="status-pill">Pobieranie...</div>
       <div class="last-update" id="last-update-time">Pobieranie danych...</div>
     </div>
-
-    <div class="stats-grid">
-      <div class="stat-item"><div class="stat-label">Minimum</div><div class="stat-val" id="stat-min">--%</div></div>
-      <div class="stat-item"><div class="stat-label">Średnia</div><div class="stat-val" id="stat-avg">--%</div></div>
-      <div class="stat-item"><div class="stat-label">Maksimum</div><div class="stat-val" id="stat-max">--%</div></div>
-    </div>
   </div>
 
-  <!-- Wykres -->
   <div class="card">
     <div class="chart-controls">
       <button class="range-btn" onclick="setRange('24h')">24h</button>
       <button class="range-btn active" onclick="setRange('7d')">7 dni</button>
       <button class="range-btn" onclick="setRange('30d')">30 dni</button>
-      <button class="range-btn" onclick="setRange('all')">Wszystko</button>
+      <button class="range-btn" onclick="setRange('all')">Całość</button>
     </div>
     <div class="chart-container">
       <canvas id="historyChart"></canvas>
@@ -123,55 +125,94 @@
   </div>
 
   <div class="actions-bar">
-    <button class="refresh-btn" onclick="loadAllData()">Odśwież dane</button>
-    <button class="delete-btn" onclick="removeCurrentDevice()">Usuń</button>
+    <button class="refresh-btn" onclick="loadAllData()">Odśwież</button>
+    <button class="config-btn" onclick="toggleConfig()">⚙️ Ustawienia</button>
+  </div>
+
+  <!-- Panel Ustawień (zapisywany do bazy) -->
+  <div class="card config-panel" id="config-panel">
+    <h3 style="margin-bottom: 16px; font-size: 1rem;">Konfiguracja Urządzenia</h3>
+    
+    <div class="config-row">
+      <span class="config-label">Progi wilgotności (Min / Max %)</span>
+      <div>
+        <input type="number" id="cfg-min" class="config-input" style="width: 60px" placeholder="Min">
+        <input type="number" id="cfg-max" class="config-input" style="width: 60px" placeholder="Max">
+      </div>
+    </div>
+    <div class="config-row">
+      <span class="config-label">Pomiary co (minut):<br><small style="font-weight:400">(Min. 10 minut)</small></span>
+      <input type="number" id="cfg-interval" class="config-input" min="10">
+    </div>
+    <div class="config-row">
+      <span class="config-label">Czas podglądu ekranu (s):</span>
+      <input type="number" id="cfg-screen" class="config-input" min="0" max="60">
+    </div>
+    
+    <button class="config-save-btn" onclick="saveConfig()">Zapisz do bazy</button>
+    <button class="config-save-btn" style="background:#fee2e2; color:#991b1b; margin-top:8px;" onclick="removeCurrentDevice()">Usuń roślinę z aplikacji</button>
   </div>
 </div>
 
 <script>
   const BASE_URL = "https://mierniki-gleby-default-rtdb.europe-west1.firebasedatabase.app/devices";
 
-  // Wczytanie zapisanych urządzeń z pamięci telefonu
   let trackedDevices = JSON.parse(localStorage.getItem('tracked_devices')) || ['ROSLINA_001'];
-  
-  // Sprawdzenie, czy w URL przekazano ID z kodu QR (?id=ROSLINA_002)
-  const urlParams = new URLSearchParams(window.location.search);
-  const urlDeviceId = urlParams.get('id');
-  if (urlDeviceId && !trackedDevices.includes(urlDeviceId)) {
-    trackedDevices.push(urlDeviceId);
-    localStorage.setItem('tracked_devices', JSON.stringify(trackedDevices));
-  }
-
-  let activeDeviceId = urlDeviceId || trackedDevices[0] || 'ROSLINA_001';
+  let activeDeviceId = trackedDevices[0] || 'ROSLINA_001';
   let allEntries = [];
+  let deviceConfig = { min: 25, max: 75, interval: 60, screen: 4 }; // Domyślne
   let currentRange = '7d';
   let chartInstance = null;
 
-  // Obsługa zmiany nazwy rośliny
-  const nameInput = document.getElementById('plant-name-input');
-  nameInput.addEventListener('change', () => {
-    localStorage.setItem(`plant_name_${activeDeviceId}`, nameInput.value);
+  // Dark mode inicjalizacja
+  if (localStorage.getItem('theme') === 'dark') document.body.classList.add('dark');
+  function toggleTheme() {
+    document.body.classList.toggle('dark');
+    localStorage.setItem('theme', document.body.classList.contains('dark') ? 'dark' : 'light');
+    if (chartInstance) updateDashboard(); // Odśwież wykres dla nowych kolorów
+  }
+
+  // Zmiana nazwy rośliny
+  document.getElementById('plant-name-input').addEventListener('change', (e) => {
+    localStorage.setItem(`plant_name_${activeDeviceId}`, e.target.value);
     renderPlantCards();
   });
 
-  function promptAddDevice() {
-    const newId = prompt("Wpisz ID nowego miernika (np. ROSLINA_002):");
-    if (newId && newId.trim() !== "") {
-      const cleanId = newId.trim();
-      if (!trackedDevices.includes(cleanId)) {
-        trackedDevices.push(cleanId);
+  function toggleConfig() {
+    document.getElementById('config-panel').classList.toggle('open');
+  }
+
+  // Weryfikacja hasła przy dodawaniu
+  async function promptAddDevice() {
+    const newId = prompt("Wpisz ID nowego miernika:");
+    if (!newId || newId.trim() === "") return;
+    const id = newId.trim();
+
+    try {
+      const res = await fetch(`${BASE_URL}/${id}/config/password.json`);
+      const pass = await res.json();
+      
+      if (pass) {
+        const userPass = prompt(`Urządzenie ${id} jest chronione hasłem. Podaj hasło:`);
+        if (userPass !== pass) {
+          alert("Błędne hasło!");
+          return;
+        }
+      }
+
+      if (!trackedDevices.includes(id)) {
+        trackedDevices.push(id);
         localStorage.setItem('tracked_devices', JSON.stringify(trackedDevices));
       }
-      selectDevice(cleanId);
+      selectDevice(id);
+    } catch (e) {
+      alert("Błąd połączenia z bazą.");
     }
   }
 
   function removeCurrentDevice() {
-    if (trackedDevices.length <= 1) {
-      alert("Musisz posiadać co najmniej jedną roślinę na liście.");
-      return;
-    }
-    if (confirm(`Czy na pewno chcesz usunąć ${activeDeviceId} z listy podglądu?`)) {
+    if (trackedDevices.length <= 1) return alert("To twoja jedyna roślina!");
+    if (confirm(`Usunąć ${activeDeviceId}?`)) {
       trackedDevices = trackedDevices.filter(id => id !== activeDeviceId);
       localStorage.setItem('tracked_devices', JSON.stringify(trackedDevices));
       selectDevice(trackedDevices[0]);
@@ -181,158 +222,140 @@
   function selectDevice(id) {
     activeDeviceId = id;
     document.getElementById('device-id-badge').innerText = id;
-    nameInput.value = localStorage.getItem(`plant_name_${id}`) || id;
-    renderPlantCards();
-    fetchActiveDeviceHistory();
+    document.getElementById('plant-name-input').value = localStorage.getItem(`plant_name_${id}`) || id;
+    document.getElementById('config-panel').classList.remove('open');
+    loadAllData();
   }
 
   async function loadAllData() {
     renderPlantCards();
-    fetchActiveDeviceHistory();
-  }
-
-  async function renderPlantCards() {
-    const listContainer = document.getElementById('plants-list');
-    listContainer.innerHTML = '';
-
-    for (const id of trackedDevices) {
-      const customName = localStorage.getItem(`plant_name_${id}`) || id;
-      const isActive = id === activeDeviceId;
-
-      const card = document.createElement('div');
-      card.className = `plant-card-small ${isActive ? 'active' : ''}`;
-      card.onclick = () => selectDevice(id);
-
-      card.innerHTML = `
-        <div class="card-small-title">${customName}</div>
-        <div class="card-small-val" id="card-val-${id}">--%</div>
-        <div class="card-small-status" id="card-status-${id}">Pobieranie...</div>
-      `;
-      listContainer.appendChild(card);
-
-      // Pobranie ostatniego odczytu dla kafelka
-      try {
-        const res = await fetch(`${BASE_URL}/${id}/history.json?orderBy="$key"&limitToLast=1`);
-        const data = await res.json();
-        if (data) {
-          const lastEntry = Object.values(data)[0];
-          document.getElementById(`card-val-${id}`).innerText = `${lastEntry.moisture}%`;
-          
-          let statusText = '🟢 OK';
-          if (lastEntry.moisture < 25) statusText = '🔴 Dry';
-          else if (lastEntry.moisture > 75) statusText = '🔵 Wet';
-          document.getElementById(`card-status-${id}`).innerText = statusText;
-        }
-      } catch (e) {
-        document.getElementById(`card-status-${id}`).innerText = 'Błąd';
-      }
-    }
-  }
-
-  async function fetchActiveDeviceHistory() {
     document.getElementById('last-update-time').innerText = 'Pobieranie...';
 
     try {
-      const response = await fetch(`${BASE_URL}/${activeDeviceId}/history.json`);
-      const data = await response.json();
+      // Pobieranie Historii
+      const resHist = await fetch(`${BASE_URL}/${activeDeviceId}/history.json`);
+      const histData = await resHist.json();
+      allEntries = histData ? Object.values(histData).sort((a, b) => a.timestamp - b.timestamp) : [];
 
-      if (!data) {
-        allEntries = [];
-        document.getElementById('last-update-time').innerText = 'Brak wpisów w bazie';
-        updateDashboard();
-        return;
+      // Pobieranie Konfiguracji
+      const resCfg = await fetch(`${BASE_URL}/${activeDeviceId}/config.json`);
+      const cfgData = await resCfg.json();
+      if (cfgData) {
+        deviceConfig.min = cfgData.min_moisture || 25;
+        deviceConfig.max = cfgData.max_moisture || 75;
+        deviceConfig.interval = cfgData.sleep_interval_min || 60;
+        deviceConfig.screen = cfgData.screen_time_sec || 4;
       }
 
-      allEntries = Object.values(data);
-      allEntries.sort((a, b) => a.timestamp - b.timestamp);
-      updateDashboard();
+      // Wypełnienie formularza ustawień
+      document.getElementById('cfg-min').value = deviceConfig.min;
+      document.getElementById('cfg-max').value = deviceConfig.max;
+      document.getElementById('cfg-interval').value = deviceConfig.interval;
+      document.getElementById('cfg-screen').value = deviceConfig.screen;
 
+      updateDashboard();
     } catch (err) {
       console.error(err);
       document.getElementById('last-update-time').innerText = 'Błąd połączenia';
     }
   }
 
+  async function saveConfig() {
+    const interval = Math.max(10, parseInt(document.getElementById('cfg-interval').value));
+    const configUpdate = {
+      min_moisture: parseInt(document.getElementById('cfg-min').value),
+      max_moisture: parseInt(document.getElementById('cfg-max').value),
+      sleep_interval_min: interval,
+      screen_time_sec: parseInt(document.getElementById('cfg-screen').value)
+    };
+
+    try {
+      // Zapisujemy konfigurację do bazy za pomocą PATCH (aby nie nadpisać hasła jeśli istnieje)
+      await fetch(`${BASE_URL}/${activeDeviceId}/config.json`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(configUpdate)
+      });
+      alert('Zapisano w chmurze! ESP pobierze nowe dane przy następnym wybudzeniu.');
+      loadAllData();
+    } catch (e) {
+      alert('Błąd zapisu.');
+    }
+  }
+
+  async function renderPlantCards() {
+    const list = document.getElementById('plants-list');
+    list.innerHTML = '';
+    for (const id of trackedDevices) {
+      const card = document.createElement('div');
+      card.className = `plant-card-small ${id === activeDeviceId ? 'active' : ''}`;
+      card.onclick = () => selectDevice(id);
+      card.innerHTML = `<div class="card-small-title">${localStorage.getItem(`plant_name_${id}`) || id}</div>
+                        <div class="card-small-val" id="cval-${id}">--%</div>`;
+      list.appendChild(card);
+
+      fetch(`${BASE_URL}/${id}/history.json?orderBy="$key"&limitToLast=1`)
+        .then(r => r.json()).then(d => {
+          if(d) document.getElementById(`cval-${id}`).innerText = `${Object.values(d)[0].moisture}%`;
+        });
+    }
+  }
+
   function setRange(range) {
     currentRange = range;
-    document.querySelectorAll('.range-btn').forEach(btn => btn.classList.remove('active'));
+    document.querySelectorAll('.range-btn').forEach(b => b.classList.remove('active'));
     event.target.classList.add('active');
     updateDashboard();
   }
 
   function updateDashboard() {
-    const filtered = filterDataByRange(allEntries, currentRange);
+    const cutoff = Date.now() - (currentRange === '24h' ? 86400000 : currentRange === '7d' ? 604800000 : 2592000000);
+    const filtered = currentRange === 'all' ? allEntries : allEntries.filter(i => i.timestamp >= cutoff);
 
     if (allEntries.length > 0) {
       const latest = allEntries[allEntries.length - 1];
       document.getElementById('current-val').innerText = `${latest.moisture}%`;
-
-      const lastDate = new Date(latest.timestamp);
-      document.getElementById('last-update-time').innerText = `Ostatni pomiar: ${lastDate.toLocaleDateString()} ${lastDate.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}`;
+      const date = new Date(latest.timestamp);
+      document.getElementById('last-update-time').innerText = `Aktualizacja: ${date.toLocaleDateString()} ${date.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}`;
 
       const pill = document.getElementById('status-pill');
-      if (latest.moisture < 25) {
-        pill.className = 'status-pill status-dry';
-        pill.innerText = '🔴 Potrzebuje wody';
-      } else if (latest.moisture > 75) {
-        pill.className = 'status-pill status-wet';
-        pill.innerText = '🔵 Bardzo mokro';
+      // Progi zdefiniowane przez użytkownika
+      if (latest.moisture < deviceConfig.min) {
+        pill.className = 'status-pill status-alert'; pill.innerText = '🔴 Za sucho';
+      } else if (latest.moisture > deviceConfig.max) {
+        pill.className = 'status-pill status-alert'; pill.innerText = '🔵 Za mokro';
       } else {
-        pill.className = 'status-pill status-good';
-        pill.innerText = '🟢 Wilgotność optymalna';
+        pill.className = 'status-pill status-good'; pill.innerText = '🟢 Optymalnie';
       }
-    } else {
-      document.getElementById('current-val').innerText = `--%`;
-      document.getElementById('status-pill').innerText = `Brak danych`;
-    }
-
-    if (filtered.length > 0) {
-      const values = filtered.map(i => i.moisture);
-      document.getElementById('stat-min').innerText = `${Math.min(...values)}%`;
-      document.getElementById('stat-avg').innerText = `${Math.round(values.reduce((a, b) => a + b, 0) / values.length)}%`;
-      document.getElementById('stat-max').innerText = `${Math.max(...values)}%`;
-    } else {
-      document.getElementById('stat-min').innerText = `--%`;
-      document.getElementById('stat-avg').innerText = `--%`;
-      document.getElementById('stat-max').innerText = `--%`;
     }
 
     renderChart(filtered);
   }
 
-  function filterDataByRange(entries, range) {
-    if (!entries.length || range === 'all') return entries;
-    const cutoff = Date.now() - (range === '24h' ? 86400000 : range === '7d' ? 604800000 : 2592000000);
-    return entries.filter(item => item.timestamp >= cutoff);
-  }
-
   function renderChart(entries) {
     const ctx = document.getElementById('historyChart').getContext('2d');
-    const labels = entries.map(item => {
-      const d = new Date(item.timestamp);
-      return currentRange === '24h' 
-        ? d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-        : `${d.getDate()}.${d.getMonth() + 1} ${d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
-    });
+    const isDark = document.body.classList.contains('dark');
+    
+    // Dane w formacie obiektowym {x: timestamp, y: wartosc} do proporcjonalnego odstępu
+    const chartData = entries.map(item => ({ x: item.timestamp, y: item.moisture }));
 
     if (chartInstance) chartInstance.destroy();
 
-    const gradient = ctx.createLinearGradient(0, 0, 0, 180);
-    gradient.addColorStop(0, 'rgba(16, 185, 129, 0.3)');
+    const gradient = ctx.createLinearGradient(0, 0, 0, 200);
+    gradient.addColorStop(0, isDark ? 'rgba(52, 211, 153, 0.3)' : 'rgba(16, 185, 129, 0.3)');
     gradient.addColorStop(1, 'rgba(16, 185, 129, 0.0)');
 
     chartInstance = new Chart(ctx, {
       type: 'line',
       data: {
-        labels: labels,
         datasets: [{
-          data: entries.map(i => i.moisture),
-          borderColor: '#10b981',
+          data: chartData,
+          borderColor: isDark ? '#34d399' : '#10b981',
           borderWidth: 3,
           backgroundColor: gradient,
           fill: true,
-          tension: 0.35,
-          pointRadius: entries.length > 40 ? 0 : 3
+          tension: 0.3,
+          pointRadius: entries.length > 50 ? 0 : 3
         }]
       },
       options: {
@@ -340,14 +363,25 @@
         maintainAspectRatio: false,
         plugins: { legend: { display: false } },
         scales: {
-          x: { grid: { display: false }, ticks: { maxTicksLimit: 5, font: { size: 10 } } },
-          y: { min: 0, max: 100, ticks: { stepSize: 20, callback: v => v + '%' } }
+          x: {
+            type: 'time', // Proporcjonalna oś X
+            time: {
+              unit: currentRange === '24h' ? 'hour' : 'day',
+              displayFormats: { hour: 'HH:mm', day: 'dd.MM' }
+            },
+            grid: { display: false },
+            ticks: { color: isDark ? '#9ca3af' : '#6b7280', maxTicksLimit: 6 }
+          },
+          y: {
+            min: 0, max: 100,
+            grid: { color: isDark ? '#374151' : '#e5e7eb' },
+            ticks: { stepSize: 25, color: isDark ? '#9ca3af' : '#6b7280', callback: v => v + '%' }
+          }
         }
       }
     });
   }
 
-  // Start aplikacji
   selectDevice(activeDeviceId);
 </script>
 
