@@ -6,142 +6,211 @@
   <title>Inteligentne Rośliny</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   
-  <!-- Chart.js i adapter czasu do proporcjonalnego wykresu -->
+  <!-- Chart.js i adapter czasu -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/date-fns"></script>
   <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
-  
+
   <style>
     :root {
-      --bg-color: #f3f4f6;
+      --bg: #f8fafc;
       --card-bg: #ffffff;
       --primary: #10b981;
-      --primary-dark: #059669;
-      --text-main: #1f2937;
-      --text-muted: #6b7280;
-      --border-color: #e5e7eb;
-      --shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05);
-      --input-bg: #f9fafb;
+      --primary-hover: #059669;
+      --primary-light: rgba(16, 185, 129, 0.12);
+      --text-main: #0f172a;
+      --text-muted: #64748b;
+      --border: #e2e8f0;
+      --shadow-sm: 0 1px 3px rgba(0,0,0,0.05);
+      --shadow-md: 0 10px 25px -5px rgba(0,0,0,0.05), 0 8px 10px -6px rgba(0,0,0,0.01);
+      --input-bg: #f1f5f9;
+      --alert-dry: #ef4444;
+      --alert-wet: #3b82f6;
     }
 
     body.dark {
-      --bg-color: #111827;
-      --card-bg: #1f2937;
+      --bg: #0b0f19;
+      --card-bg: #151c2c;
       --primary: #34d399;
-      --primary-dark: #10b981;
-      --text-main: #f9fafb;
-      --text-muted: #9ca3af;
-      --border-color: #374151;
-      --shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5);
-      --input-bg: #374151;
+      --primary-hover: #10b981;
+      --primary-light: rgba(52, 211, 153, 0.15);
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --border: #1e293b;
+      --shadow-sm: 0 1px 3px rgba(0,0,0,0.3);
+      --shadow-md: 0 10px 25px -5px rgba(0, 0, 0, 0.4);
+      --input-bg: #1e293b;
     }
 
-    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', sans-serif; }
-    body { background-color: var(--bg-color); color: var(--text-main); padding: 16px; display: flex; justify-content: center; transition: all 0.3s ease; }
-    .app-container { width: 100%; max-width: 480px; display: flex; flex-direction: column; gap: 16px; padding-bottom: 30px; }
-
-    .header-bar { display: flex; justify-content: space-between; align-items: center; }
-    .header-title { font-size: 1.4rem; font-weight: 700; }
-    .header-actions { display: flex; gap: 8px; }
-    .btn-small { background: var(--primary); color: #fff; border: none; padding: 8px 14px; border-radius: 12px; font-weight: 600; font-size: 0.85rem; cursor: pointer; }
-    .btn-icon { background: var(--card-bg); color: var(--text-main); border: 1px solid var(--border-color); padding: 8px; border-radius: 12px; cursor: pointer; }
-
-    .plants-scroll { display: flex; gap: 10px; overflow-x: auto; padding-bottom: 8px; scrollbar-width: none; }
-    .plants-scroll::-webkit-scrollbar { display: none; }
-    .plant-card-small { background: var(--card-bg); border: 2px solid transparent; border-radius: 16px; padding: 12px; min-width: 130px; box-shadow: var(--shadow); cursor: pointer; flex-shrink: 0; }
-    .plant-card-small.active { border-color: var(--primary); }
-    .card-small-title { font-size: 0.85rem; font-weight: 600; color: var(--text-muted); }
-    .card-small-val { font-size: 1.6rem; font-weight: 800; margin: 4px 0; color: var(--text-main); }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Plus Jakarta Sans', sans-serif; transition: background-color 0.2s, border-color 0.2s; }
+    body { background-color: var(--bg); color: var(--text-main); padding: 16px; display: flex; justify-content: center; min-height: 100vh; }
     
-    .card { background: var(--card-bg); border-radius: 20px; padding: 20px; box-shadow: var(--shadow); }
-    .plant-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
-    .plant-name { font-size: 1.3rem; font-weight: 700; color: var(--text-main); border: none; background: transparent; outline: none; width: 100%; }
-    .plant-name:focus { border-bottom: 2px solid var(--primary); }
-    .device-badge { font-size: 0.75rem; background: var(--input-bg); color: var(--text-muted); padding: 4px 8px; border-radius: 8px; font-weight: 600; }
+    .app-container { width: 100%; max-width: 480px; display: flex; flex-direction: column; gap: 16px; padding-bottom: 24px; }
 
-    .moisture-display { text-align: center; padding: 12px 0; }
-    .moisture-value { font-size: 3.8rem; font-weight: 800; letter-spacing: -1px; margin-bottom: 8px; }
-    .status-pill { display: inline-flex; align-items: center; padding: 6px 16px; border-radius: 20px; font-size: 0.85rem; font-weight: 600; margin-bottom: 8px; }
-    .status-good { background: rgba(16, 185, 129, 0.2); color: var(--primary); }
-    .status-alert { background: rgba(239, 68, 68, 0.2); color: #ef4444; }
-    .last-update { font-size: 0.78rem; color: var(--text-muted); }
+    /* Nagłówek */
+    .header-bar { display: flex; justify-content: space-between; align-items: center; padding: 4px 0; }
+    .header-title { font-size: 1.35rem; font-weight: 800; tracking: -0.02em; display: flex; align-items: center; gap: 8px; }
+    .header-actions { display: flex; gap: 8px; }
+    
+    .btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; background: var(--primary); color: #fff; border: none; padding: 10px 16px; border-radius: 14px; font-weight: 600; font-size: 0.88rem; cursor: pointer; transition: all 0.2s ease; }
+    .btn:hover { background: var(--primary-hover); transform: translateY(-1px); }
+    .btn:active { transform: translateY(0); }
+    
+    .btn-icon { background: var(--card-bg); color: var(--text-main); border: 1px solid var(--border); width: 40px; height: 40px; border-radius: 12px; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: var(--shadow-sm); }
+    .btn-icon:hover { border-color: var(--primary); }
 
-    .chart-controls { display: flex; gap: 6px; background: var(--input-bg); padding: 4px; border-radius: 12px; margin-bottom: 12px; }
-    .range-btn { flex: 1; border: none; background: transparent; padding: 8px 0; font-size: 0.78rem; font-weight: 600; color: var(--text-muted); border-radius: 8px; cursor: pointer; }
-    .range-btn.active { background: var(--card-bg); color: var(--text-main); box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-    .chart-container { position: relative; height: 220px; width: 100%; }
+    /* Przewijana lista roślin */
+    .plants-scroll { display: flex; gap: 12px; overflow-x: auto; padding: 4px 2px 10px 2px; scrollbar-width: none; }
+    .plants-scroll::-webkit-scrollbar { display: none; }
+    
+    .plant-card-small { background: var(--card-bg); border: 2px solid var(--border); border-radius: 18px; padding: 12px 16px; min-width: 135px; box-shadow: var(--shadow-sm); cursor: pointer; flex-shrink: 0; transition: all 0.2s ease; }
+    .plant-card-small:hover { transform: translateY(-2px); border-color: var(--text-muted); }
+    .plant-card-small.active { border-color: var(--primary); background: var(--card-bg); box-shadow: var(--shadow-md); }
+    .card-small-title { font-size: 0.8rem; font-weight: 600; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .card-small-val { font-size: 1.5rem; font-weight: 800; margin-top: 4px; color: var(--text-main); }
 
-    /* Konfiguracja panelu */
-    .config-panel { display: none; margin-top: 16px; border-top: 1px solid var(--border-color); padding-top: 16px; }
+    /* Główna karta stanu */
+    .card { background: var(--card-bg); border-radius: 24px; padding: 20px; box-shadow: var(--shadow-md); border: 1px solid var(--border); position: relative; }
+    .plant-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; gap: 12px; }
+    .plant-name { font-size: 1.25rem; font-weight: 700; color: var(--text-main); border: none; background: transparent; outline: none; width: 100%; border-radius: 6px; padding: 2px 0; }
+    .plant-name:focus { background: var(--input-bg); padding: 2px 8px; }
+    .device-badge { font-size: 0.72rem; background: var(--input-bg); color: var(--text-muted); padding: 4px 10px; border-radius: 20px; font-weight: 700; letter-spacing: 0.03em; white-space: nowrap; }
+
+    /* Okrągły wskaźnik poziomu wilgotności */
+    .gauge-wrapper { position: relative; width: 170px; height: 170px; margin: 8px auto 16px auto; display: flex; align-items: center; justify-content: center; }
+    .gauge-svg { width: 100%; height: 100%; transform: rotate(-90deg); }
+    .gauge-bg { fill: none; stroke: var(--input-bg); stroke-width: 10; }
+    .gauge-progress { fill: none; stroke: var(--primary); stroke-width: 10; stroke-linecap: round; stroke-dasharray: 440; stroke-dashoffset: 440; transition: stroke-dashoffset 0.8s ease, stroke 0.3s; }
+    
+    .gauge-center { position: absolute; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+    .moisture-value { font-size: 3rem; font-weight: 800; letter-spacing: -0.03em; line-height: 1; }
+    .moisture-unit { font-size: 1.2rem; font-weight: 700; color: var(--text-muted); margin-top: -2px; }
+
+    .status-container { text-align: center; }
+    .status-pill { display: inline-flex; align-items: center; gap: 6px; padding: 6px 16px; border-radius: 30px; font-size: 0.82rem; font-weight: 700; margin-bottom: 6px; }
+    .status-good { background: var(--primary-light); color: var(--primary); }
+    .status-dry { background: rgba(239, 68, 68, 0.15); color: var(--alert-dry); }
+    .status-wet { background: rgba(59, 130, 246, 0.15); color: var(--alert-wet); }
+    .last-update { font-size: 0.75rem; color: var(--text-muted); font-weight: 500; }
+
+    /* Wykres */
+    .chart-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+    .chart-title { font-size: 0.9rem; font-weight: 700; color: var(--text-muted); }
+    .chart-controls { display: flex; gap: 4px; background: var(--input-bg); padding: 4px; border-radius: 12px; }
+    .range-btn { border: none; background: transparent; padding: 6px 12px; font-size: 0.75rem; font-weight: 700; color: var(--text-muted); border-radius: 8px; cursor: pointer; transition: all 0.2s; }
+    .range-btn.active { background: var(--card-bg); color: var(--text-main); box-shadow: var(--shadow-sm); }
+    .chart-container { position: relative; height: 210px; width: 100%; }
+
+    /* Panel Ustawień i Modale */
+    .config-panel { display: none; margin-top: 4px; animation: fadeIn 0.2s ease-in-out; }
     .config-panel.open { display: block; }
-    .config-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
-    .config-label { font-size: 0.85rem; font-weight: 600; color: var(--text-muted); }
-    .config-input { width: 80px; padding: 6px; border-radius: 8px; border: 1px solid var(--border-color); background: var(--input-bg); color: var(--text-main); font-weight: 600; text-align: right; }
-    .config-save-btn { width: 100%; padding: 12px; background: var(--primary); color: #fff; border: none; border-radius: 12px; font-weight: 600; margin-top: 8px; cursor: pointer; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: translateY(0); } }
 
-    .actions-bar { display: flex; gap: 8px; }
-    .refresh-btn { flex: 1; padding: 14px; border: none; border-radius: 14px; background: var(--primary); color: white; font-size: 0.95rem; font-weight: 600; cursor: pointer; }
-    .config-btn { padding: 14px; border: none; border-radius: 14px; background: var(--input-bg); color: var(--text-main); font-size: 0.95rem; font-weight: 600; cursor: pointer; }
+    .config-title { font-size: 0.95rem; font-weight: 700; margin-bottom: 14px; display: flex; align-items: center; gap: 8px; }
+    .config-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
+    .config-label { font-size: 0.83rem; font-weight: 600; color: var(--text-muted); }
+    .config-input { width: 90px; padding: 8px 10px; border-radius: 10px; border: 1px solid var(--border); background: var(--input-bg); color: var(--text-main); font-weight: 700; font-size: 0.85rem; text-align: right; outline: none; }
+    .config-input:focus { border-color: var(--primary); }
+
+    .actions-bar { display: flex; gap: 10px; }
+    .refresh-btn { flex: 2; }
+    .config-btn { flex: 1; background: var(--input-bg); color: var(--text-main); border: 1px solid var(--border); }
+    .config-btn:hover { background: var(--border); }
+
+    /* Modal Dodawania Urządzenia */
+    .modal-overlay { position: fixed; top:0; left:0; right:0; bottom:0; background: rgba(0,0,0,0.5); backdrop-filter: blur(4px); display: none; justify-content: center; align-items: center; z-index: 100; padding: 16px; }
+    .modal-overlay.open { display: flex; }
+    .modal-card { background: var(--card-bg); width: 100%; max-width: 360px; border-radius: 20px; padding: 20px; box-shadow: var(--shadow-md); border: 1px solid var(--border); }
+    .modal-title { font-size: 1.1rem; font-weight: 700; margin-bottom: 12px; }
+    .modal-input { width: 100%; padding: 10px 12px; border-radius: 12px; border: 1px solid var(--border); background: var(--input-bg); color: var(--text-main); font-size: 0.9rem; margin-bottom: 12px; outline: none; }
+    .modal-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 8px; }
+
+    /* Toast Notification */
+    .toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%) translateY(100px); background: var(--text-main); color: var(--bg); padding: 10px 20px; border-radius: 30px; font-weight: 600; font-size: 0.85rem; box-shadow: var(--shadow-md); transition: transform 0.3s ease; z-index: 1000; pointer-events: none; opacity: 0; }
+    .toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
   </style>
 </head>
 <body>
 
 <div class="app-container">
+  <!-- Nagłówek -->
   <div class="header-bar">
-    <div class="header-title">Moje Rośliny</div>
+    <div class="header-title">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="color:var(--primary)"><path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z"/><path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12"/></svg>
+      Moje Rośliny
+    </div>
     <div class="header-actions">
-      <button class="btn-icon" onclick="toggleTheme()">🌓</button>
-      <button class="btn-small" onclick="promptAddDevice()">+ Dodaj</button>
+      <button class="btn-icon" onclick="toggleTheme()" title="Zmień motyw">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>
+      </button>
+      <button class="btn" onclick="openAddModal()">+ Dodaj</button>
     </div>
   </div>
 
+  <!-- Przewijana lista roślin -->
   <div class="plants-scroll" id="plants-list"></div>
 
+  <!-- Główna karta z parametrami -->
   <div class="card">
     <div class="plant-header">
       <input type="text" id="plant-name-input" class="plant-name" value="Ładowanie..." />
       <span class="device-badge" id="device-id-badge">ID: ---</span>
     </div>
 
-    <div class="moisture-display">
-      <div class="moisture-value" id="current-val">--%</div>
+    <div class="gauge-wrapper">
+      <svg class="gauge-svg" viewBox="0 0 160 160">
+        <circle class="gauge-bg" cx="80" cy="80" r="70" />
+        <circle class="gauge-progress" id="gauge-circle" cx="80" cy="80" r="70" />
+      </svg>
+      <div class="gauge-center">
+        <span class="moisture-value" id="current-val">--</span>
+        <span class="moisture-unit">%</span>
+      </div>
+    </div>
+
+    <div class="status-container">
       <div class="status-pill status-good" id="status-pill">Pobieranie...</div>
       <div class="last-update" id="last-update-time">Pobieranie danych...</div>
     </div>
   </div>
 
+  <!-- Karta wykresu -->
   <div class="card">
-    <div class="chart-controls">
-      <button class="range-btn" onclick="setRange('24h')">24h</button>
-      <button class="range-btn active" onclick="setRange('7d')">7 dni</button>
-      <button class="range-btn" onclick="setRange('30d')">30 dni</button>
-      <button class="range-btn" onclick="setRange('all')">Całość</button>
+    <div class="chart-header">
+      <span class="chart-title">Historia wilgotności</span>
+      <div class="chart-controls">
+        <button class="range-btn" onclick="setRange('24h', this)">24h</button>
+        <button class="range-btn active" onclick="setRange('7d', this)">7 dni</button>
+        <button class="range-btn" onclick="setRange('30d', this)">30 dni</button>
+        <button class="range-btn" onclick="setRange('all', this)">Wszystko</button>
+      </div>
     </div>
     <div class="chart-container">
       <canvas id="historyChart"></canvas>
     </div>
   </div>
 
+  <!-- Pasek akcji -->
   <div class="actions-bar">
-    <button class="refresh-btn" onclick="loadAllData()">Odśwież</button>
-    <button class="config-btn" onclick="toggleConfig()">⚙️ Ustawienia</button>
+    <button class="btn refresh-btn" onclick="loadAllData()">Odśwież dane</button>
+    <button class="btn config-btn" onclick="toggleConfig()">⚙️ Ustawienia</button>
   </div>
 
-  <!-- Panel Ustawień (zapisywany do bazy) -->
+  <!-- Panel Ustawień -->
   <div class="card config-panel" id="config-panel">
-    <h3 style="margin-bottom: 16px; font-size: 1rem;">Konfiguracja Urządzenia</h3>
+    <div class="config-title">Konfiguracja urządzenia</div>
     
     <div class="config-row">
       <span class="config-label">Progi wilgotności (Min / Max %)</span>
-      <div>
-        <input type="number" id="cfg-min" class="config-input" style="width: 60px" placeholder="Min">
-        <input type="number" id="cfg-max" class="config-input" style="width: 60px" placeholder="Max">
+      <div style="display:flex; gap:6px;">
+        <input type="number" id="cfg-min" class="config-input" style="width: 55px" placeholder="Min">
+        <input type="number" id="cfg-max" class="config-input" style="width: 55px" placeholder="Max">
       </div>
     </div>
     <div class="config-row">
-      <span class="config-label">Pomiary co (minut):<br><small style="font-weight:400">(Min. 10 minut)</small></span>
+      <span class="config-label">Pomiary co (minut):<br><small style="font-weight:400; color:var(--text-muted)">(Min. 10 min)</small></span>
       <input type="number" id="cfg-interval" class="config-input" min="10">
     </div>
     <div class="config-row">
@@ -149,10 +218,26 @@
       <input type="number" id="cfg-screen" class="config-input" min="0" max="60">
     </div>
     
-    <button class="config-save-btn" onclick="saveConfig()">Zapisz do bazy</button>
-    <button class="config-save-btn" style="background:#fee2e2; color:#991b1b; margin-top:8px;" onclick="removeCurrentDevice()">Usuń roślinę z aplikacji</button>
+    <button class="btn" style="width: 100%; margin-top: 6px;" onclick="saveConfig()">Zapisz w urządzeniu</button>
+    <button class="btn" style="width: 100%; background: transparent; color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.3); margin-top: 8px;" onclick="removeCurrentDevice()">Usuń roślinę z aplikacji</button>
   </div>
 </div>
+
+<!-- Modal Dodawania Urządzenia -->
+<div class="modal-overlay" id="add-modal">
+  <div class="modal-card">
+    <div class="modal-title">Dodaj nowy miernik</div>
+    <input type="text" id="modal-device-id" class="modal-input" placeholder="Wpisz ID urządzenia (np. ROSLINA_002)">
+    <input type="password" id="modal-device-pass" class="modal-input" placeholder="Hasło (jeśli wymagane)" style="display:none;">
+    <div class="modal-actions">
+      <button class="btn config-btn" onclick="closeAddModal()">Anuluj</button>
+      <button class="btn" onclick="submitAddDevice()">Dodaj</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast Notification -->
+<div class="toast" id="toast"></div>
 
 <script>
   const BASE_URL = "https://mierniki-gleby-default-rtdb.europe-west1.firebasedatabase.app/devices";
@@ -160,68 +245,95 @@
   let trackedDevices = JSON.parse(localStorage.getItem('tracked_devices')) || ['ROSLINA_001'];
   let activeDeviceId = trackedDevices[0] || 'ROSLINA_001';
   let allEntries = [];
-  let deviceConfig = { min: 25, max: 75, interval: 60, screen: 4 }; // Domyślne
+  let deviceConfig = { min: 25, max: 75, interval: 60, screen: 4 }; 
   let currentRange = '7d';
   let chartInstance = null;
 
-  // Dark mode inicjalizacja
+  // Inicjalizacja motywu
   if (localStorage.getItem('theme') === 'dark') document.body.classList.add('dark');
+  
   function toggleTheme() {
     document.body.classList.toggle('dark');
     localStorage.setItem('theme', document.body.classList.contains('dark') ? 'dark' : 'light');
-    if (chartInstance) updateDashboard(); // Odśwież wykres dla nowych kolorów
+    if (chartInstance) updateDashboard(); 
   }
 
-  // Zmiana nazwy rośliny
+  function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.innerText = msg;
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 3000);
+  }
+
+  // Obsługa nazwy rośliny
   document.getElementById('plant-name-input').addEventListener('change', (e) => {
     localStorage.setItem(`plant_name_${activeDeviceId}`, e.target.value);
     renderPlantCards();
+    showToast("Zapisano nazwę rośliny");
   });
 
   function toggleConfig() {
     document.getElementById('config-panel').classList.toggle('open');
   }
 
-  // Weryfikacja hasła przy dodawaniu
-  async function promptAddDevice() {
-    const newId = prompt("Wpisz ID nowego miernika:");
-    if (!newId || newId.trim() === "") return;
-    const id = newId.trim();
+  // Dialog dodawania urządzenia
+  function openAddModal() {
+    document.getElementById('modal-device-id').value = '';
+    document.getElementById('modal-device-pass').value = '';
+    document.getElementById('modal-device-pass').style.display = 'none';
+    document.getElementById('add-modal').classList.add('open');
+  }
+
+  function closeAddModal() {
+    document.getElementById('add-modal').classList.remove('open');
+  }
+
+  async function submitAddDevice() {
+    const idInput = document.getElementById('modal-device-id').value.trim();
+    const passInput = document.getElementById('modal-device-pass').value;
+    
+    if (!idInput) return;
 
     try {
-      const res = await fetch(`${BASE_URL}/${id}/config/password.json`);
+      const res = await fetch(`${BASE_URL}/${idInput}/config/password.json`);
       const pass = await res.json();
-      
-      if (pass) {
-        const userPass = prompt(`Urządzenie ${id} jest chronione hasłem. Podaj hasło:`);
-        if (userPass !== pass) {
-          alert("Błędne hasło!");
-          return;
-        }
+
+      if (pass && document.getElementById('modal-device-pass').style.display === 'none') {
+        document.getElementById('modal-device-pass').style.display = 'block';
+        showToast("Urządzenie wymaga hasła. Podaj je poniżej.");
+        return;
       }
 
-      if (!trackedDevices.includes(id)) {
-        trackedDevices.push(id);
+      if (pass && passInput !== pass) {
+        showToast("❌ Błędne hasło!");
+        return;
+      }
+
+      if (!trackedDevices.includes(idInput)) {
+        trackedDevices.push(idInput);
         localStorage.setItem('tracked_devices', JSON.stringify(trackedDevices));
       }
-      selectDevice(id);
+      closeAddModal();
+      selectDevice(idInput);
+      showToast("Dodano urządzenie!");
     } catch (e) {
-      alert("Błąd połączenia z bazą.");
+      showToast("Błąd połączenia z bazą.");
     }
   }
 
   function removeCurrentDevice() {
-    if (trackedDevices.length <= 1) return alert("To twoja jedyna roślina!");
-    if (confirm(`Usunąć ${activeDeviceId}?`)) {
+    if (trackedDevices.length <= 1) return showToast("Nie możesz usunąć jedynej rośliny!");
+    if (confirm(`Czy na pewno usunąć ${activeDeviceId} z aplikacji?`)) {
       trackedDevices = trackedDevices.filter(id => id !== activeDeviceId);
       localStorage.setItem('tracked_devices', JSON.stringify(trackedDevices));
       selectDevice(trackedDevices[0]);
+      showToast("Usunięto roślinę");
     }
   }
 
   function selectDevice(id) {
     activeDeviceId = id;
-    document.getElementById('device-id-badge').innerText = id;
+    document.getElementById('device-id-badge').innerText = `ID: ${id}`;
     document.getElementById('plant-name-input').value = localStorage.getItem(`plant_name_${id}`) || id;
     document.getElementById('config-panel').classList.remove('open');
     loadAllData();
@@ -232,12 +344,10 @@
     document.getElementById('last-update-time').innerText = 'Pobieranie...';
 
     try {
-      // Pobieranie Historii
       const resHist = await fetch(`${BASE_URL}/${activeDeviceId}/history.json`);
       const histData = await resHist.json();
       allEntries = histData ? Object.values(histData).sort((a, b) => a.timestamp - b.timestamp) : [];
 
-      // Pobieranie Konfiguracji
       const resCfg = await fetch(`${BASE_URL}/${activeDeviceId}/config.json`);
       const cfgData = await resCfg.json();
       if (cfgData) {
@@ -247,7 +357,6 @@
         deviceConfig.screen = cfgData.screen_time_sec || 4;
       }
 
-      // Wypełnienie formularza ustawień
       document.getElementById('cfg-min').value = deviceConfig.min;
       document.getElementById('cfg-max').value = deviceConfig.max;
       document.getElementById('cfg-interval').value = deviceConfig.interval;
@@ -270,16 +379,15 @@
     };
 
     try {
-      // Zapisujemy konfigurację do bazy za pomocą PATCH (aby nie nadpisać hasła jeśli istnieje)
       await fetch(`${BASE_URL}/${activeDeviceId}/config.json`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(configUpdate)
       });
-      alert('Zapisano w chmurze! ESP pobierze nowe dane przy następnym wybudzeniu.');
+      showToast("Zapisano w chmurze! ESP pobierze dane przy wybudzeniu.");
       loadAllData();
     } catch (e) {
-      alert('Błąd zapisu.');
+      showToast("Błąd zapisu w chmurze.");
     }
   }
 
@@ -290,22 +398,47 @@
       const card = document.createElement('div');
       card.className = `plant-card-small ${id === activeDeviceId ? 'active' : ''}`;
       card.onclick = () => selectDevice(id);
-      card.innerHTML = `<div class="card-small-title">${localStorage.getItem(`plant_name_${id}`) || id}</div>
-                        <div class="card-small-val" id="cval-${id}">--%</div>`;
+      card.innerHTML = `
+        <div class="card-small-title">${localStorage.getItem(`plant_name_${id}`) || id}</div>
+        <div class="card-small-val" id="cval-${id}">--%</div>
+      `;
       list.appendChild(card);
 
       fetch(`${BASE_URL}/${id}/history.json?orderBy="$key"&limitToLast=1`)
         .then(r => r.json()).then(d => {
-          if(d) document.getElementById(`cval-${id}`).innerText = `${Object.values(d)[0].moisture}%`;
+          if(d) {
+            const val = Object.values(d)[0].moisture;
+            const el = document.getElementById(`cval-${id}`);
+            if (el) el.innerText = `${val}%`;
+          }
         });
     }
   }
 
-  function setRange(range) {
+  function setRange(range, btnEl) {
     currentRange = range;
     document.querySelectorAll('.range-btn').forEach(b => b.classList.remove('active'));
-    event.target.classList.add('active');
+    if (btnEl) btnEl.classList.add('active');
     updateDashboard();
+  }
+
+  function setGaugeValue(val) {
+    const circle = document.getElementById('gauge-circle');
+    const circumference = 2 * Math.PI * 70; // r=70 -> ~439.8
+    const clamped = Math.min(100, Math.max(0, val));
+    const offset = circumference - (clamped / 100) * circumference;
+    
+    circle.style.strokeDasharray = circumference;
+    circle.style.strokeDashoffset = offset;
+
+    // Kolory pierscienia w zaleznosci od stanu
+    if (val < deviceConfig.min) {
+      circle.style.stroke = 'var(--alert-dry)';
+    } else if (val > deviceConfig.max) {
+      circle.style.stroke = 'var(--alert-wet)';
+    } else {
+      circle.style.stroke = 'var(--primary)';
+    }
   }
 
   function updateDashboard() {
@@ -314,19 +447,27 @@
 
     if (allEntries.length > 0) {
       const latest = allEntries[allEntries.length - 1];
-      document.getElementById('current-val').innerText = `${latest.moisture}%`;
+      document.getElementById('current-val').innerText = latest.moisture;
+      setGaugeValue(latest.moisture);
+
       const date = new Date(latest.timestamp);
-      document.getElementById('last-update-time').innerText = `Aktualizacja: ${date.toLocaleDateString()} ${date.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}`;
+      document.getElementById('last-update-time').innerText = `Ostatni pomiar: ${date.toLocaleDateString()} ${date.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}`;
 
       const pill = document.getElementById('status-pill');
-      // Progi zdefiniowane przez użytkownika
       if (latest.moisture < deviceConfig.min) {
-        pill.className = 'status-pill status-alert'; pill.innerText = '🔴 Za sucho';
+        pill.className = 'status-pill status-dry'; 
+        pill.innerText = '🔴 Za sucho';
       } else if (latest.moisture > deviceConfig.max) {
-        pill.className = 'status-pill status-alert'; pill.innerText = '🔵 Za mokro';
+        pill.className = 'status-pill status-wet'; 
+        pill.innerText = '🔵 Za mokro';
       } else {
-        pill.className = 'status-pill status-good'; pill.innerText = '🟢 Optymalnie';
+        pill.className = 'status-pill status-good'; 
+        pill.innerText = '🟢 Optymalnie';
       }
+    } else {
+      document.getElementById('current-val').innerText = '--';
+      setGaugeValue(0);
+      document.getElementById('last-update-time').innerText = 'Brak danych w bazie';
     }
 
     renderChart(filtered);
@@ -335,14 +476,12 @@
   function renderChart(entries) {
     const ctx = document.getElementById('historyChart').getContext('2d');
     const isDark = document.body.classList.contains('dark');
-    
-    // Dane w formacie obiektowym {x: timestamp, y: wartosc} do proporcjonalnego odstępu
     const chartData = entries.map(item => ({ x: item.timestamp, y: item.moisture }));
 
     if (chartInstance) chartInstance.destroy();
 
     const gradient = ctx.createLinearGradient(0, 0, 0, 200);
-    gradient.addColorStop(0, isDark ? 'rgba(52, 211, 153, 0.3)' : 'rgba(16, 185, 129, 0.3)');
+    gradient.addColorStop(0, isDark ? 'rgba(52, 211, 153, 0.25)' : 'rgba(16, 185, 129, 0.2)');
     gradient.addColorStop(1, 'rgba(16, 185, 129, 0.0)');
 
     chartInstance = new Chart(ctx, {
@@ -351,11 +490,12 @@
         datasets: [{
           data: chartData,
           borderColor: isDark ? '#34d399' : '#10b981',
-          borderWidth: 3,
+          borderWidth: 2.5,
           backgroundColor: gradient,
           fill: true,
           tension: 0.3,
-          pointRadius: entries.length > 50 ? 0 : 3
+          pointRadius: entries.length > 40 ? 0 : 3.5,
+          pointBackgroundColor: isDark ? '#34d399' : '#10b981'
         }]
       },
       options: {
@@ -364,18 +504,18 @@
         plugins: { legend: { display: false } },
         scales: {
           x: {
-            type: 'time', // Proporcjonalna oś X
+            type: 'time',
             time: {
               unit: currentRange === '24h' ? 'hour' : 'day',
               displayFormats: { hour: 'HH:mm', day: 'dd.MM' }
             },
             grid: { display: false },
-            ticks: { color: isDark ? '#9ca3af' : '#6b7280', maxTicksLimit: 6 }
+            ticks: { color: isDark ? '#94a3b8' : '#64748b', maxTicksLimit: 5, font: { size: 10 } }
           },
           y: {
             min: 0, max: 100,
-            grid: { color: isDark ? '#374151' : '#e5e7eb' },
-            ticks: { stepSize: 25, color: isDark ? '#9ca3af' : '#6b7280', callback: v => v + '%' }
+            grid: { color: isDark ? '#1e293b' : '#f1f5f9' },
+            ticks: { stepSize: 25, color: isDark ? '#94a3b8' : '#64748b', font: { size: 10 }, callback: v => v + '%' }
           }
         }
       }
